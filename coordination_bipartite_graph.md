@@ -1,7 +1,11 @@
 
 
-Node kind 1 = DIDs
-Node kind 2 = handles
+#### Items of the bipartite graph 
+
+* Node kind 1 = DIDs
+* Node kind 2 = handles
+* Edge: “this DID has held this handle”, with the times it was first and last seen
+
 
    DIDs                 handles
  did:plc:aaa ─────── alice.bsky.social
