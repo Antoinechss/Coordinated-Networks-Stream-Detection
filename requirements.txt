@@ -6,3 +6,5 @@ numpy
 pandas
 pyarrow           
 python-dotenv
+requests
+urllib.parse
