@@ -1,4 +1,4 @@
-from confluent_kafka import Consumer
+from confluent_kafka import Consumer, Producer
 import requests 
 from urllib.parse import urlparse
 import json
@@ -37,6 +37,8 @@ consumer = Consumer({
 })
 consumer.subscribe(["jetstream-id-events"])
 
+producer = Producer({"bootstrap.servers": "localhost:9092"})
+
 try:
     while True:
         msg = consumer.poll(1.0)
@@ -53,11 +55,15 @@ try:
         handle = extract_handle(doc)
         pds = extract_pds(doc)
 
-        print(f"""
-        Event at timestamp : {event["payload"]["time"]}, 
-        DID: {did}
-        handle: {handle} 
-        PDS: {pds}""")
-        print("------------------------------------------------")
+        enriched = {
+            "did": did,
+            "handle": handle,
+            "pds": pds,
+            "event_time": event["payload"]["time"],
+        }
+        value = json.dumps(enriched)
+        producer.produce("jetstream-id-enriched", key=did, value=value)
+        producer.poll(0)
 finally:
+    producer.flush()
     consumer.close()
