@@ -1,0 +1,50 @@
+/**
+ * A lexicon indexer that filters documents based on a provided filter.
+ *
+ * If a document was filtered out but later requested via `get()`, the filter
+ * will be bypassed for that document.
+ */
+export class FilteredIndexer {
+    constructor(indexer, filter) {
+        this.indexer = indexer;
+        this.filter = filter;
+        this.returned = new Set();
+    }
+    async get(id) {
+        this.returned.add(id);
+        return this.indexer.get(id);
+    }
+    async *[Symbol.asyncIterator]() {
+        const returned = new Set();
+        for await (const doc of this.indexer) {
+            if (returned.has(doc.id)) {
+                // Should never happen
+                throw new Error(`Duplicate lexicon document id: ${doc.id}`);
+            }
+            if (this.returned.has(doc.id) || this.filter(doc.id)) {
+                this.returned.add(doc.id);
+                returned.add(doc.id);
+                yield doc;
+            }
+        }
+        // When we yield control back to the caller, there may be requests (.get())
+        // for documents that were initially ignored (filtered out). We won't be
+        // done iterating until every document that may have been requested when the
+        // control was yielded to the caller has been returned.
+        let returnedAny;
+        do {
+            returnedAny = false;
+            for (const id of this.returned) {
+                if (!returned.has(id)) {
+                    yield await this.indexer.get(id);
+                    returned.add(id);
+                    returnedAny = true;
+                }
+            }
+        } while (returnedAny);
+    }
+    async [Symbol.asyncDispose]() {
+        await this.indexer[Symbol.asyncDispose]?.();
+    }
+}
+//# sourceMappingURL=filtered-indexer.js.map

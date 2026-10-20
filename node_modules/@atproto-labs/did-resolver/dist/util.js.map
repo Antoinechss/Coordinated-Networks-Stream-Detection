@@ -1,0 +1,1 @@
+{"version":3,"file":"util.js","sourceRoot":"","sources":["../src/util.ts"],"names":[],"mappings":"","sourcesContent":["export type Simplify<T> = { [K in keyof T]: T[K] } & NonNullable<unknown>\n"]}

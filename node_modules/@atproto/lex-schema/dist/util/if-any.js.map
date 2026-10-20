@@ -1,0 +1,1 @@
+{"version":3,"file":"if-any.js","sourceRoot":"","sources":["../../src/util/if-any.ts"],"names":[],"mappings":"","sourcesContent":["export type IfAny<T, TrueValue, FalseValue> = 0 extends 1 & T\n  ? TrueValue\n  : FalseValue\n"]}

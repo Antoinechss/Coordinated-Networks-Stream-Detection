@@ -1,0 +1,49 @@
+{
+  "name": "@atproto/ws-client",
+  "version": "0.2.1",
+  "license": "MIT",
+  "description": "Websocket client library",
+  "keywords": [
+    "atproto",
+    "xrpc"
+  ],
+  "homepage": "https://atproto.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bluesky-social/atproto",
+    "directory": "packages/ws-client"
+  },
+  "files": [
+    "./dist",
+    "./README.md",
+    "./CHANGELOG.md"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "imports": {
+    "#transport": {
+      "node": "./dist/transport/node-transport.js",
+      "default": "./dist/transport/browser-transport.js"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.4",
+    "http-terminator": "^3.2.0",
+    "vitest": "^4.0.16"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "build": "tsc --build tsconfig.build.json"
+  }
+}
