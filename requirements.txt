@@ -8,3 +8,4 @@ pyarrow
 python-dotenv
 requests
 urllib.parse
+networkx
