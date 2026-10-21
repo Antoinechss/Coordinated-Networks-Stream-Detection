@@ -1,45 +1,52 @@
 from confluent_kafka import Consumer, Producer 
-from collections import defaultdict
 import json
+import networkx as nx 
 
-dids_to_handles = defaultdict(dict)
-handles_to_dids = defaultdict(dict)
 current_handle = {}
 
-def upsert_edge(index, a, b, t): 
-    '''Helper function to insert new dids and handles into dictionnary'''
-    if b in index[a]: 
-        index[a][b]['last_seen'] = t 
+def update_graph(G, did, handle, t): 
+
+    new_shared = False
+
+    G.add_node(did, kind="did")
+    G.add_node(handle, kind='handle')
+
+    # Handle change detection
+    old_handle = current_handle.get(did)
+    if (old_handle is not None) and (old_handle != handle): 
+        print(f"HANDLE CHANGE: {old_handle} --> {handle}")
+
+    if G.has_edge(did,handle): 
+        G.edges[did, handle]['last_seen'] = t 
     else: 
-        index[a][b] = {"first_seen": t, "last_seen": t}
-
-
-def update_graph(did, handle, t): 
-    '''
-    Updates did_to_handles, handle_to_dids and current_handle dictionnaries 
-    with the latest values and timestamp of event
-    '''
-    upsert_edge(dids_to_handles, did, handle, t)
-    upsert_edge(handles_to_dids, handle, did, t)
-
-    current_handle[did] = handle 
-
-
+        G.add_edge(did, handle, first_seen=t, last_seen=t)
+        # Shared handle detection
+        if G.degree(handle) >= 2: 
+            print(f"SHARED HANDLE: {handle}: {list(G.neighbors(handle))}")
+        if G.degree(handle) == 2: 
+            new_shared = True
+    current_handle[did] = handle
+    return new_shared
 
 # --- Stream processing --- 
 
 consumer = Consumer({
     "bootstrap.servers": "localhost:9092",
-    "group.id": "graph-builder",
+    "group.id": "graph-builder-v2",
     "auto.offset.reset": "earliest",
+    "enable.auto.commit": False, 
 })
 
 consumer.subscribe(["jetstream-id-enriched"])
 
 
+G = nx.Graph()
+shared_handles_count = 0
+i = 0 
 
 try:
     while True:
+
         msg = consumer.poll(1.0) # Consume topic 
 
         # Error handling 
@@ -54,8 +61,17 @@ try:
         did = event["did"]
         handle = event["handle"]
         t = event["event_time"]
-        update_graph(did, handle, t)
-
+        
+        if handle is None: 
+            continue
+        if update_graph(G, did, handle, t): 
+            shared_handles_count += 1
+        i += 1
+        if i % 100 == 0: 
+            print(f"""
+            Nodes: {G.number_of_nodes()}
+            Edges: {G.number_of_edges()}
+            Shared handles: {shared_handles_count}""")
 
 finally:
     consumer.close()
