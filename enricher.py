@@ -30,6 +30,8 @@ def extract_pds(doc):
     return None
 
 
+# --- Stream processing --- 
+
 consumer = Consumer({
     "bootstrap.servers": "localhost:9092",
     "group.id": "enricher",
